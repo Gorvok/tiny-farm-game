@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animal Farm Clicker Game</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background-color: #e8f5e9;
+            font-family: Arial, sans-serif;
+        }
+
+        #gameCanvas {
+            border: 2px solid #4caf50;
+            margin-bottom: 20px;
+        }
+
+        #resources, #shop {
+            font-size: 1.2em;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 600px) {
+            #gameCanvas {
+                width: 300px;
+                height: 200px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div id="instructions">
+    <h2>How to Play</h2>
+    <p>Welcome to the Animal Farm Clicker Game! The goal is to unlock and collect resources from different animals on the farm. Here’s how to play:</p>
+    <ul>
+        <li><strong>Click on animals</strong> to collect resources like eggs, milk, and wool.</li>
+        <li>There are 11 animals in total to unlock, each with unique resources. You’ll start with a chicken and unlock the rest as you progress.</li>
+        <li>Each animal unlocks when you've collected enough resources from the previous animals. For example, collect eggs from chickens to unlock cows, then collect milk from cows to unlock sheep, and so on.</li>
+        <li>Once you've unlocked all the animals up to the donkey, you can move to the next level.</li>
+        <li>With each level, the game becomes more challenging. You'll need to collect more resources to unlock each new animal, and the animals will start moving around the screen!</li>
+        <li>Every 5 levels, animals will move faster, so be quick!</li>
+        <li>You can buy upgrades like an Auto-Collector and Double Output to help you progress.</li>
+    </ul>
+    <p>Good luck, and see how far you can go!</p>
+</div>
+
+<canvas id="gameCanvas" width="800" height="600"></canvas>
+<div id="resources">
+    Level: <span id="level">1</span> | Eggs: <span id="eggs">0</span> | Milk: <span id="milk">0</span> | Wool: <span id="wool">0</span> | Truffles: <span id="truffles">0</span>
+    | Speed: <span id="speed">0</span> | Fur: <span id="fur">0</span> | Loyalty: <span id="loyalty">0</span> | Purr: <span id="purr">0</span> | Strength: <span id="strength">0</span>
+</div>
+
+<div id="shop">
+    <button onclick="buyAutoCollector()">Buy Auto-Collector (50 Eggs)</button>
+    <button onclick="buyDoubleOutput()">Double Output for 30 Seconds (30 Milk)</button>
+</div>
+
+<script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    // Level and resources
+    let level = 1;
+    let resources = {
+        eggs: 0, milk: 0, wool: 0, truffles: 0, speed: 0,
+        fur: 0, loyalty: 0, purr: 0, strength: 0
+    };
+
+    const resourceDisplay = {
+        eggs: document.getElementById("eggs"),
+        milk: document.getElementById("milk"),
+        wool: document.getElementById("wool"),
+        truffles: document.getElementById("truffles"),
+        speed: document.getElementById("speed"),
+        fur: document.getElementById("fur"),
+        loyalty: document.getElementById("loyalty"),
+        purr: document.getElementById("purr"),
+        strength: document.getElementById("strength"),
+        level: document.getElementById("level")
+    };
+
+    // Auto-collector and double output settings
+    let autoCollectorActive = false;
+    let doubleOutputActive = false;
+
+    // Animal data with background and animal images
+    const backgroundImage = new Image();
+    backgroundImage.src = "assets/farm_background.jpg";
+
+    const animals = [
+        { name: "chicken", x: 100, y: 150, width: 80, height: 80, imageSrc: "assets/chicken.png", resource: "eggs", unlocked: true, speedX: 0, speedY: 0 },
+        { name: "cow", x: 300, y: 150, width: 120, height: 120, imageSrc: "assets/cow.png", resource: "milk", unlocked: false, speedX: 0, speedY: 0 },
+        { name: "sheep", x: 200, y: 250, width: 100, height: 100, imageSrc: "assets/sheep.png", resource: "wool", unlocked: false, speedX: 0, speedY: 0 },
+        { name: "goat", x: 400, y: 300, width: 100, height: 100, imageSrc: "assets/goat.png", resource: "milk", unlocked: false, speedX: 0, speedY: 0 },
+        { name: "pig", x: 500, y: 200, width: 100, height: 100, imageSrc: "assets/pig.png", resource: "truffles", unlocked: false, speedX: 0, speedY: 0 },
+        { name: "horse", x: 600, y: 100, width: 120, height: 120, imageSrc: "assets/horse.png", resource: "speed", unlocked: false, speedX: 0, speedY: 0 },
+        { name: "bunny", x: 200, y: 100, width: 80, height: 80, imageSrc: "assets/bunny.png", resource: "fur", unlocked: false, speedX: 0, speedY: 0 },
+        { name: "dog", x: 300, y: 350, width: 100, height: 100, imageSrc: "assets/dog.png", resource: "loyalty", unlocked: false, speedX: 0, speedY: 0 },
+        { name: "cat", x: 400, y: 400, width: 80, height: 80, imageSrc: "assets/cat.png", resource: "purr", unlocked: false, speedX: 0, speedY: 0 },
+        { name: "llama", x: 500, y: 350, width: 100, height: 100, imageSrc: "assets/llama.png", resource: "wool", unlocked: false, speedX: 0, speedY: 0 },
+        { name: "donkey", x: 600, y: 200, width: 120, height: 120, imageSrc: "assets/donkey.png", resource: "strength", unlocked: false, speedX: 0, speedY: 0 }
+    ];
+
+    animals.forEach(animal => {
+        animal.image = new Image();
+        animal.image.src = animal.imageSrc;
+    });
+
+    function incrementResource(resource) {
+        let increment = doubleOutputActive ? 2 : 1;
+        resources[resource] += increment;
+        resourceDisplay[resource].textContent = resources[resource];
+        checkUnlocks();
+    }
+
+    function checkUnlocks() {
+        if (resources.eggs >= 20 * level && !animals[1].unlocked) unlockAnimal("cow");
+        if (resources.milk >= 15 * level && !animals[2].unlocked) unlockAnimal("sheep");
+        if (resources.wool >= 10 * level && !animals[3].unlocked) unlockAnimal("goat");
+        if (resources.milk >= 20 * level && !animals[4].unlocked) unlockAnimal("pig");
+        if (resources.wool >= 25 * level && !animals[5].unlocked) unlockAnimal("horse");
+        if (resources.truffles >= 30 * level && !animals[6].unlocked) unlockAnimal("bunny");
+        if (resources.fur >= 10 * level && !animals[7].unlocked) unlockAnimal("dog");
+        if (resources.loyalty >= 15 * level && !animals[8].unlocked) unlockAnimal("cat");
+        if (resources.wool >= 20 * level && !animals[9].unlocked) unlockAnimal("llama");
+        if (resources.speed >= 25 * level && !animals[10].unlocked) {
+            unlockAnimal("donkey");
+            setTimeout(nextLevelPrompt, 500);
+        }
+    }
+
+    function unlockAnimal(name) {
+        const animal = animals.find(a => a.name === name);
+        if (animal) animal.unlocked = true;
+    }
+
+    function nextLevelPrompt() {
+        if (confirm("Congratulations! You've unlocked all the animals. Do you want to proceed to the next level?")) {
+            resetGame();
+        }
+    }
+
+    function resetGame() {
+        level++;
+        resources = { eggs: 0, milk: 0, wool: 0, truffles: 0, speed: 0, fur: 0, loyalty: 0, purr: 0, strength: 0 };
+        animals.forEach(animal => {
+            animal.unlocked = animal.name === "chicken";
+            if (level >= 2) {
+                animal.speedX = Math.random() > 0.5 ? 1 : -1;
+                animal.speedY = Math.random() > 0.5 ? 1 : -1;
+            }
+            if (level % 5 === 0) { animal.speedX *= 1.2; animal.speedY *= 1.2; }
+        });
+        resourceDisplay.level.textContent = level;
+        updateResourceDisplays();
+    }
+
+    function updateResourceDisplays() {
+        for (let resource in resources) {
+            if (resourceDisplay[resource]) resourceDisplay[resource].textContent = resources[resource];
+        }
+    }
+
+    function buyAutoCollector() {
+        if (resources.eggs >= 50 && !autoCollectorActive) {
+            resources.eggs -= 50;
+            autoCollectorActive = true;
+            setInterval(() => {
+                animals.forEach(animal => {
+                    if (animal.unlocked) incrementResource(animal.resource);
+                });
+            }, 3000);
+        }
+    }
+
+    function buyDoubleOutput() {
+        if (resources.milk >= 30 && !doubleOutputActive) {
+            resources.milk -= 30;
+            doubleOutputActive = true;
+            setTimeout(() => doubleOutputActive = false, 30000);
+        }
+    }
+
+    canvas.addEventListener("click", function (e) {
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+        animals.forEach(animal => {
+            if (
+                mouseX >= animal.x &&
+                mouseX <= animal.x + animal.width &&
+                mouseY >= animal.y &&
+                mouseY <= animal.y + animal.height &&
+                animal.unlocked
+            ) {
+                incrementResource(animal.resource);
+            }
+        });
+    });
+
+    function gameLoop() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
+        animals.forEach(animal => {
+            if (animal.unlocked) {
+                animal.x += animal.speedX;
+                animal.y += animal.speedY;
+
+                if (animal.x <= 0 || animal.x + animal.width >= canvas.width) animal.speedX *= -1;
+                if (animal.y <= 0 || animal.y + animal.height >= canvas.height) animal.speedY *= -1;
+
+                ctx.drawImage(animal.image, animal.x, animal.y, animal.width, animal.height);
+            }
+        });
+        requestAnimationFrame(gameLoop);
+    }
+
+    backgroundImage.onload = gameLoop;
+</script>
+</body>
+</html>
