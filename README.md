@@ -38,3 +38,31 @@ Welcome to the **Animal Farm Clicker Game**! A fun and interactive web-based cli
 - **Responsive Design:** Optimized for both desktop and mobile screens.
 
 ---
+
+🖼️ Screenshots
+- **Starting the Game:**
+![Game Interface](assets/main-img.png)
+
+- **Mid-Game with Unlocked Animals:**
+![Gameplay Image](assets/gameplay-img.png)
+
+---
+
+🤝 Contributing
+Contributions are welcome! If you’d like to enhance the game, feel free to fork the repository, make your changes, and submit a pull request.
+
+---
+
+Acknowledgments
+- Background image and animal sprites sourced from [Freepik](https://www.freepik.com/).
+- Inspiration for gameplay mechanics from classic clicker games.
+
+---
+
+🔗 Links
+- GitHub Repository: [Animal Farm Clicker Game](https://github.com/Gorvok/tiny-farm-game)
+- Play the Game Online: [Live Demo](https://gorvok.github.io/tiny-farm-game/)
+
+---
+
+Enjoy the game! 🐔🐄🐑🐖
